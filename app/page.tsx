@@ -1,1005 +1,1373 @@
-"use client";
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sécurix — Preuve vidéo certifiée</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-import Link from "next/link";
+  :root {
+    --gold: #D4AF37;
+    --gold-light: #F3D86E;
+    --gold-dim: rgba(212,175,55,0.15);
+    --gold-border: rgba(212,175,55,0.22);
+    --navy: #0A1628;
+    --navy-mid: #0F1B2E;
+    --navy-card: #13233A;
+    --text: #F0EEE8;
+    --text-muted: #8A96AA;
+    --text-dim: #556070;
+    --border: rgba(255,255,255,0.08);
+    --border-mid: rgba(255,255,255,0.13);
+    --surface: rgba(255,255,255,0.04);
+    --surface-mid: rgba(255,255,255,0.07);
+    --font-head: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --radius: 1.25rem;
+    --radius-lg: 2rem;
+  }
 
-const PLAY_STORE_URL =
-  "https://play.google.com/store/apps/details?id=com.example.fideo";
+  html { scroll-behavior: smooth; }
 
-function ShieldBadge({ className = "" }: { className?: string }) {
-  return (
-    <div className={`relative ${className}`}>
-      <svg
-        viewBox="0 0 120 145"
-        className="h-full w-full drop-shadow-[0_10px_20px_rgba(0,0,0,0.45)]"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <defs>
-          <linearGradient id="shieldGold" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#F8E79A" />
-            <stop offset="18%" stopColor="#E4C44E" />
-            <stop offset="45%" stopColor="#D4AF37" />
-            <stop offset="70%" stopColor="#B98D12" />
-            <stop offset="100%" stopColor="#F3D86E" />
-          </linearGradient>
+  body {
+    background: var(--navy);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
 
-          <linearGradient id="shieldStroke" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="rgba(255,255,255,0.65)" />
-            <stop offset="50%" stopColor="rgba(255,255,255,0.18)" />
-            <stop offset="100%" stopColor="rgba(255,255,255,0.55)" />
-          </linearGradient>
+  /* ─── NOISE TEXTURE ──────────────────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: .6;
+  }
 
-          <filter id="shieldGlow" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="5" result="blur" />
-            <feColorMatrix
-              in="blur"
-              type="matrix"
-              values="1 0 0 0 0.83
-                      0 1 0 0 0.69
-                      0 0 1 0 0.22
-                      0 0 0 0.45 0"
-            />
-          </filter>
-        </defs>
+  * { position: relative; z-index: 1; }
 
-        <path
-          d="M60 5 L108 20 L108 76
-             Q108 108 60 138
-             Q12 108 12 76
-             L12 20 Z"
-          fill="#D4AF37"
-          filter="url(#shieldGlow)"
-          opacity="0.35"
-        />
+  /* ─── LAYOUT ─────────────────────────────────────────────────── */
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
 
-        <path
-          d="M60 5 L108 20 L108 76
-             Q108 108 60 138
-             Q12 108 12 76
-             L12 20 Z"
-          fill="url(#shieldGold)"
-          stroke="url(#shieldStroke)"
-          strokeWidth="2.4"
-        />
+  /* ─── HEADER ─────────────────────────────────────────────────── */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,22,40,0.88);
+    backdrop-filter: blur(18px);
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: 1.5rem;
+  }
+  .logo-wrap { display: flex; align-items: center; gap: .9rem; text-decoration: none; }
+  .logo-mark {
+    width: 44px; height: 44px;
+    border: 1.5px solid var(--gold-border);
+    border-radius: .75rem;
+    background: var(--gold-dim);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-mark svg { width: 22px; height: 22px; }
+  .logo-name { font-family: var(--font-head); font-size: 1.2rem; font-weight: 700; letter-spacing: .12em; color: var(--gold); }
+  .logo-sub { font-size: .68rem; color: var(--text-muted); letter-spacing: .1em; text-transform: uppercase; }
 
-        <path
-          d="M60 13 L98 25 L98 75
-             Q98 101 60 128
-             Q22 101 22 75
-             L22 25 Z"
-          fill="none"
-          stroke="rgba(255,255,255,0.35)"
-          strokeWidth="1.2"
-        />
+  nav { display: flex; align-items: center; gap: 2rem; }
+  nav a { font-size: .875rem; color: var(--text-muted); text-decoration: none; transition: color .2s; letter-spacing: .02em; }
+  nav a:hover { color: var(--gold); }
 
-        <g
-          transform="translate(60 72)"
-          fill="none"
-          stroke="#13233A"
-          strokeWidth="4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="0" cy="-22" r="4" fill="#13233A" stroke="none" />
-          <line x1="-22" y1="-16" x2="22" y2="-16" />
-          <line x1="0" y1="-16" x2="0" y2="12" />
-          <line x1="-14" y1="-16" x2="-18" y2="-2" />
-          <line x1="14" y1="-16" x2="18" y2="-2" />
-          <path d="M-26 5 Q-18 10 -10 5" />
-          <path d="M10 5 Q18 10 26 5" />
-          <line x1="-18" y1="-2" x2="-24" y2="4" />
-          <line x1="-18" y1="-2" x2="-12" y2="4" />
-          <line x1="18" y1="-2" x2="12" y2="4" />
-          <line x1="18" y1="-2" x2="24" y2="4" />
-          <line x1="-16" y1="18" x2="16" y2="18" />
-        </g>
-      </svg>
-    </div>
-  );
-}
+  /* dropdown */
+  .nav-group { position: relative; }
+  .nav-group > a { display: flex; align-items: center; gap: .3rem; }
+  .nav-group > a::after { content: '▾'; font-size: .6rem; opacity: .5; }
+  .dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + .75rem);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--navy-card);
+    border: 1px solid var(--border-mid);
+    border-radius: var(--radius);
+    padding: .75rem;
+    min-width: 180px;
+    white-space: nowrap;
+  }
+  .nav-group:hover .dropdown { display: block; }
+  .dropdown a { display: block; padding: .5rem .75rem; border-radius: .5rem; font-size: .82rem; color: var(--text-muted); }
+  .dropdown a:hover { background: var(--surface-mid); color: var(--gold); }
 
-function GooglePlayBadge({
-  href,
-  className = "",
-}: {
-  href: string;
-  className?: string;
-}) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      aria-label="Disponible sur Google Play"
-      className={`inline-flex items-center gap-3 rounded-2xl border border-white/12 bg-black px-4 py-3 text-left transition hover:border-[#D4AF37]/40 hover:bg-black/90 ${className}`}
-    >
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/5">
-        <svg
-          viewBox="0 0 24 24"
-          className="h-6 w-6"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-        >
-          <path d="M3 2L14.5 12L3 22V2Z" fill="#00D26A" />
-          <path
-            d="M14.5 12L18.2 8.4L21 10C22.2 10.7 22.2 13.3 21 14L18.2 15.6L14.5 12Z"
-            fill="#FFD24A"
-          />
-          <path
-            d="M3 2L11.4 10.4L14.5 12L18.2 8.4L3 2Z"
-            fill="#4AA3FF"
-          />
-          <path
-            d="M3 22L11.4 13.6L14.5 12L18.2 15.6L3 22Z"
-            fill="#FF5252"
-          />
+  .btn-play {
+    display: inline-flex; align-items: center; gap: .6rem;
+    background: var(--navy-card);
+    border: 1px solid var(--border-mid);
+    border-radius: .875rem;
+    padding: .55rem 1rem;
+    color: var(--text);
+    text-decoration: none;
+    font-size: .82rem;
+    transition: border-color .2s;
+  }
+  .btn-play:hover { border-color: var(--gold-border); }
+  .play-icon { width: 26px; height: 26px; }
+
+  /* ─── HERO ───────────────────────────────────────────────────── */
+  .hero {
+    padding: 6rem 2rem 4rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.1fr .9fr;
+    gap: 4rem;
+    align-items: center;
+  }
+  @media (max-width: 900px) { .hero { grid-template-columns: 1fr; } }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: .5rem;
+    border: 1px solid var(--gold-border);
+    background: var(--gold-dim);
+    padding: .35rem 1rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.75rem;
+  }
+  .hero-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
+  h1 {
+    font-family: var(--font-head);
+    font-size: clamp(2.2rem, 4.5vw, 3.6rem);
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: -.02em;
+    color: #fff;
+    margin-bottom: 1.5rem;
+  }
+  h1 em { font-style: normal; color: var(--gold); }
+
+  .hero-desc { font-size: 1.05rem; color: var(--text-muted); line-height: 1.8; max-width: 520px; margin-bottom: 2rem; }
+
+  .hero-ctas { display: flex; flex-wrap: wrap; gap: .875rem; align-items: center; }
+
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: .5rem;
+    background: var(--gold);
+    color: #0A1628;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: .9rem;
+    letter-spacing: .05em;
+    padding: .75rem 1.5rem;
+    border-radius: .875rem;
+    text-decoration: none;
+    transition: opacity .2s;
+  }
+  .btn-primary:hover { opacity: .88; }
+
+  .btn-outline {
+    display: inline-flex; align-items: center; gap: .5rem;
+    border: 1px solid var(--border-mid);
+    color: var(--text);
+    font-size: .9rem;
+    padding: .75rem 1.5rem;
+    border-radius: .875rem;
+    text-decoration: none;
+    transition: border-color .2s, color .2s;
+  }
+  .btn-outline:hover { border-color: var(--gold-border); color: var(--gold); }
+
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: .5rem;
+    border: 1px solid var(--gold-border);
+    color: var(--gold);
+    font-size: .9rem;
+    padding: .75rem 1.5rem;
+    border-radius: .875rem;
+    text-decoration: none;
+    transition: background .2s;
+  }
+  .btn-ghost:hover { background: var(--gold-dim); }
+
+  /* ─── PROOF CARD ─────────────────────────────────────────────── */
+  .proof-card {
+    border: 1px solid var(--gold-border);
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+  }
+  .proof-card-inner {
+    background: var(--navy-card);
+    border-radius: 1.5rem;
+    border: 1px solid var(--border);
+    padding: 1.25rem;
+  }
+  .proof-card-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding-bottom: 1rem; border-bottom: 1px solid var(--border);
+    gap: 1rem;
+  }
+  .proof-id-label { font-size: .65rem; letter-spacing: .2em; text-transform: uppercase; color: var(--text-muted); }
+  .proof-id { font-family: var(--font-head); font-size: 1rem; font-weight: 600; color: #fff; margin-top: .4rem; }
+  .badge-ok {
+    flex-shrink: 0;
+    border: 1px solid rgba(74,222,128,.3);
+    background: rgba(74,222,128,.08);
+    color: #86efac;
+    font-size: .78rem;
+    font-weight: 500;
+    padding: .25rem .75rem;
+    border-radius: 999px;
+  }
+
+  .proof-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-top: 1rem; }
+  .proof-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: .875rem;
+    padding: .875rem;
+  }
+  .proof-cell-label { font-size: .62rem; letter-spacing: .18em; text-transform: uppercase; color: var(--text-muted); }
+  .proof-cell-val { font-size: .85rem; color: #fff; margin-top: .35rem; }
+  .proof-cell-val.gold { color: var(--gold); }
+
+  .hash-box {
+    background: rgba(10,22,40,.7);
+    border: 1px solid var(--border);
+    border-radius: .875rem;
+    padding: .875rem;
+    margin-top: .75rem;
+  }
+  .hash-label { font-size: .62rem; letter-spacing: .18em; text-transform: uppercase; color: var(--text-muted); }
+  .hash-val { font-family: monospace; font-size: .72rem; color: #8fa8c0; line-height: 1.7; word-break: break-all; margin-top: .35rem; }
+
+  .status-row { display: grid; grid-template-columns: repeat(3,1fr); gap: .5rem; margin-top: .75rem; }
+  .status-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: .625rem;
+    padding: .5rem;
+    text-align: center;
+  }
+  .status-chip .code { font-size: .78rem; font-weight: 600; color: #86efac; }
+  .status-chip .lbl { font-size: .65rem; color: var(--text-muted); margin-top: .2rem; }
+
+  .proof-note {
+    background: rgba(59,130,246,.08);
+    border: 1px solid rgba(59,130,246,.18);
+    border-radius: .875rem;
+    padding: .875rem 1rem;
+    font-size: .82rem;
+    color: #bfdbfe;
+    margin-top: .75rem;
+    line-height: 1.6;
+  }
+
+  /* ─── SECTION TITLES ─────────────────────────────────────────── */
+  .sec { padding: 5rem 0; }
+  .sec-tag {
+    display: inline-flex; align-items: center;
+    border: 1px solid var(--gold-border);
+    background: var(--gold-dim);
+    padding: .3rem .9rem;
+    border-radius: 999px;
+    font-size: .7rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.25rem;
+  }
+  h2 {
+    font-family: var(--font-head);
+    font-size: clamp(1.7rem, 3.5vw, 2.6rem);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -.02em;
+    color: #fff;
+    margin-bottom: 1.25rem;
+  }
+  .sec-desc { font-size: 1.05rem; color: var(--text-muted); max-width: 580px; line-height: 1.8; }
+
+  /* ─── PILLARS ────────────────────────────────────────────────── */
+  .pillars { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-top: 3rem; }
+  @media (max-width: 768px) { .pillars { grid-template-columns: 1fr; } }
+  .pillar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.75rem;
+  }
+  .pillar-icon {
+    width: 40px; height: 40px;
+    border: 1px solid var(--gold-border);
+    background: var(--gold-dim);
+    border-radius: .75rem;
+    margin-bottom: 1.25rem;
+  }
+  .pillar h3 { font-family: var(--font-head); font-size: 1.05rem; font-weight: 600; color: #fff; margin-bottom: .625rem; }
+  .pillar p { font-size: .9rem; color: var(--text-muted); line-height: 1.75; }
+
+  /* ─── PROBLEM / ANSWER ───────────────────────────────────────── */
+  .problem-band {
+    background: linear-gradient(135deg, var(--navy-card) 0%, var(--navy) 100%);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 3rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+  }
+  @media (max-width: 768px) { .problem-band { grid-template-columns: 1fr; padding: 2rem; gap: 2rem; } }
+  .problem-label { font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: var(--text-muted); margin-bottom: .75rem; }
+  .problem-text { font-family: var(--font-head); font-size: 1.15rem; font-weight: 600; color: #fff; line-height: 1.6; }
+  .divider-v { width: 1px; background: var(--border-mid); align-self: stretch; }
+  @media (max-width: 768px) { .divider-v { display: none; } }
+
+  /* ─── WORKFLOW ───────────────────────────────────────────────── */
+  .workflow-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-top: 3rem; }
+  @media (max-width: 900px) { .workflow-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 500px) { .workflow-grid { grid-template-columns: 1fr; } }
+  .wf-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+  .wf-step {
+    font-family: var(--font-head);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--gold);
+    opacity: .7;
+    margin-bottom: .75rem;
+  }
+  .wf-card h3 { font-family: var(--font-head); font-size: .95rem; font-weight: 600; color: #fff; margin-bottom: .5rem; }
+  .wf-card p { font-size: .85rem; color: var(--text-muted); line-height: 1.75; }
+
+  /* ─── PIPELINE ───────────────────────────────────────────────── */
+  .pipeline-shell {
+    background: linear-gradient(135deg, var(--navy-card) 0%, var(--navy) 100%);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 3rem;
+    margin-top: 1.5rem;
+  }
+  .pipeline-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 2.5rem; }
+  .pipeline-title { font-size: .75rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); }
+  .pipeline-sub { font-size: .8rem; color: var(--text-muted); margin-top: .35rem; }
+  .pipeline-time {
+    border: 1px solid var(--gold-border);
+    background: var(--gold-dim);
+    font-family: monospace;
+    font-size: .85rem;
+    color: var(--gold);
+    padding: .35rem .875rem;
+    border-radius: .625rem;
+    white-space: nowrap;
+  }
+
+  .pipeline-nodes { position: relative; padding-bottom: 3.5rem; }
+  .pipeline-line {
+    position: absolute;
+    top: 9px; left: 0; right: 0;
+    height: 1px;
+    background: var(--border);
+  }
+  .pipeline-pulse {
+    position: absolute;
+    top: 3px; left: -20%; right: auto;
+    width: 20%; height: 13px;
+    animation: pulseLine 4.8s linear infinite;
+  }
+  .pipeline-pulse::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: linear-gradient(90deg,
+      rgba(212,175,55,0),
+      rgba(212,175,55,.15),
+      rgba(212,175,55,.72),
+      rgba(255,246,200,.95),
+      rgba(212,175,55,.72),
+      rgba(212,175,55,.15),
+      rgba(212,175,55,0)
+    );
+    filter: blur(1px);
+  }
+  @keyframes pulseLine {
+    0% { left: -20%; opacity: 0; }
+    6% { opacity: 1; }
+    88% { opacity: 1; }
+    100% { left: 102%; opacity: 0; }
+  }
+
+  .pipeline-steps { display: grid; grid-template-columns: repeat(6,1fr); gap: .875rem; }
+  @media (max-width: 768px) { .pipeline-steps { grid-template-columns: repeat(3,1fr); } }
+
+  .pnode { text-align: center; }
+  .pnode-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--navy);
+    border: 1.5px solid rgba(212,175,55,.4);
+    margin: 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    animation: nodePass 4.8s linear infinite;
+  }
+  .pnode-core {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--gold);
+    animation: nodeCorePass 4.8s linear infinite;
+  }
+  .pnode-card {
+    margin-top: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: .875rem;
+    padding: .875rem .625rem;
+    opacity: .6;
+    animation: cardPass 4.8s linear infinite;
+  }
+  .pnode-t { font-family: monospace; font-size: .62rem; letter-spacing: .15em; color: var(--gold); }
+  .pnode-label { font-size: .82rem; font-weight: 500; color: #fff; margin-top: .3rem; }
+
+  @keyframes nodePass {
+    0%,100% { border-color: rgba(212,175,55,.35); transform: scale(1); background: var(--navy); }
+    10%,22% { border-color: rgba(255,240,170,.9); transform: scale(1.15); background: rgba(28,43,66,.96); box-shadow: 0 0 18px rgba(212,175,55,.45); }
+  }
+  @keyframes nodeCorePass {
+    0%,100% { background: rgba(212,175,55,.8); }
+    10%,22% { background: #fff1a8; box-shadow: 0 0 10px rgba(255,241,168,.95), 0 0 22px rgba(212,175,55,.75); }
+  }
+  @keyframes cardPass {
+    0%,100% { opacity: .6; transform: translateY(0); border-color: var(--border); background: var(--surface); }
+    10%,22% { opacity: 1; transform: translateY(-3px); border-color: rgba(212,175,55,.42); background: rgba(212,175,55,.07); }
+  }
+
+  .pipeline-branches { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-top: 1rem; }
+  @media (max-width: 768px) { .pipeline-branches { grid-template-columns: 1fr; } }
+  .branch-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    opacity: .6;
+    transform: translateY(8px);
+    animation: branchPass 4.8s linear infinite;
+  }
+  .branch-head { display: flex; align-items: center; gap: .6rem; margin-bottom: 1rem; }
+  .branch-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); animation: branchDotPass 4.8s linear infinite; }
+  .branch-title { font-size: .82rem; font-weight: 500; color: #fff; }
+  .branch-tags { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .branch-tag {
+    font-size: .72rem;
+    border: 1px solid rgba(212,175,55,.15);
+    background: rgba(212,175,55,.08);
+    color: #d1c08a;
+    padding: .35rem .6rem;
+    border-radius: .5rem;
+  }
+  @keyframes branchPass {
+    0%,100% { opacity: .6; transform: translateY(8px); border-color: var(--border); }
+    12%,28% { opacity: 1; transform: translateY(0); border-color: rgba(212,175,55,.36); background: rgba(212,175,55,.05); }
+  }
+  @keyframes branchDotPass {
+    0%,100% { box-shadow: none; }
+    12%,28% { box-shadow: 0 0 10px rgba(255,241,168,.9), 0 0 20px rgba(212,175,55,.55); }
+  }
+
+  .pipeline-note {
+    background: rgba(59,130,246,.07);
+    border: 1px solid rgba(59,130,246,.18);
+    border-radius: .875rem;
+    padding: .875rem 1.25rem;
+    font-size: .85rem;
+    color: #93c5fd;
+    margin-top: 1.5rem;
+    line-height: 1.7;
+  }
+
+  /* ─── PROOF CONTENTS ─────────────────────────────────────────── */
+  .proof-items { display: grid; grid-template-columns: repeat(5,1fr); gap: .75rem; margin-top: 2.5rem; }
+  @media (max-width: 900px) { .proof-items { grid-template-columns: repeat(2,1fr); } }
+  .proof-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.125rem 1rem;
+    font-size: .85rem;
+    color: var(--text-muted);
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .proof-item::before {
+    content: '';
+    flex-shrink: 0;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--gold);
+    opacity: .6;
+  }
+
+  /* ─── STATUS / OFFLINE ───────────────────────────────────────── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+  .card-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.25rem;
+  }
+  .card-panel.dark { background: var(--navy-card); }
+  .card-panel h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+  .card-panel p { font-size: .95rem; color: var(--text-muted); line-height: 1.8; }
+
+  .status-list { margin-top: 1.75rem; display: flex; flex-direction: column; gap: .75rem; }
+  .status-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.125rem;
+  }
+  .status-item-head { display: flex; align-items: center; gap: .75rem; margin-bottom: .5rem; }
+  .status-code {
+    font-family: monospace; font-size: .82rem; font-weight: 700;
+    border: 1px solid var(--gold-border);
+    background: var(--gold-dim);
+    color: var(--gold);
+    padding: .2rem .6rem;
+    border-radius: .4rem;
+  }
+  .status-title { font-size: .9rem; font-weight: 500; color: #fff; }
+  .status-desc { font-size: .82rem; color: var(--text-muted); line-height: 1.7; }
+
+  /* ─── PROOF FRAMEWORK ────────────────────────────────────────── */
+  .framework-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-top: 2.5rem; }
+  @media (max-width: 768px) { .framework-grid { grid-template-columns: 1fr; } }
+  .fw-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.625rem;
+  }
+  .fw-card h3 { font-family: var(--font-head); font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: .75rem; }
+  .fw-card p { font-size: .85rem; color: var(--text-muted); line-height: 1.75; }
+
+  .fw-disclaimer {
+    border: 1px solid rgba(212,175,55,.2);
+    background: rgba(212,175,55,.07);
+    border-radius: var(--radius);
+    padding: 1.125rem 1.5rem;
+    font-size: .85rem;
+    color: #c9b86a;
+    line-height: 1.7;
+    margin-top: 1.5rem;
+  }
+
+  /* ─── SHARE / VERIFY ─────────────────────────────────────────── */
+  .share-list { list-style: none; margin-top: 1.5rem; display: flex; flex-direction: column; gap: .6rem; }
+  .share-list li { font-size: .9rem; color: var(--text-muted); display: flex; align-items: center; gap: .6rem; }
+  .share-list li::before { content: '✓'; color: #86efac; font-weight: 600; }
+
+  .verify-box { margin-top: 2rem; }
+  .verify-id {
+    background: rgba(10,22,40,.7);
+    font-family: monospace;
+    font-size: .9rem;
+    color: var(--gold);
+    padding: .875rem 1rem;
+    border-radius: .625rem;
+    margin-top: .5rem;
+    margin-bottom: 1rem;
+  }
+  .verify-meta { display: flex; flex-direction: column; gap: .625rem; }
+  .verify-row {
+    background: rgba(0,0,0,.2);
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    padding: .875rem 1rem;
+  }
+  .verify-row-label { font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--text-dim); }
+  .verify-row-val { font-size: .82rem; color: var(--text-muted); margin-top: .3rem; word-break: break-all; }
+
+  /* ─── USE CASES ──────────────────────────────────────────────── */
+  .usecases-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-top: 2.5rem; }
+  @media (max-width: 900px) { .usecases-grid { grid-template-columns: repeat(2,1fr); } }
+  .uc-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    transition: border-color .2s;
+  }
+  .uc-card:hover { border-color: var(--gold-border); }
+  .uc-icon {
+    width: 40px; height: 40px;
+    border-radius: .75rem;
+    background: var(--gold-dim);
+    border: 1px solid var(--gold-border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+  .uc-card h3 { font-family: var(--font-head); font-size: .95rem; font-weight: 600; color: #fff; margin-bottom: .5rem; }
+  .uc-card p { font-size: .82rem; color: var(--text-muted); line-height: 1.7; }
+
+  /* ─── ANTI-DEEPFAKE ──────────────────────────────────────────── */
+  .deepfake-band {
+    background: linear-gradient(135deg, var(--navy-card) 0%, var(--navy) 100%);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius-lg);
+    padding: 3rem;
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 3rem;
+    align-items: center;
+  }
+  @media (max-width: 768px) { .deepfake-band { grid-template-columns: 1fr; gap: 2rem; padding: 2rem; } }
+  .deepfake-band h2 { color: #fff; margin-bottom: 1rem; }
+  .deepfake-band p { font-size: .95rem; color: var(--text-muted); line-height: 1.8; margin-bottom: 1rem; }
+  .deepfake-signals { display: flex; flex-direction: column; gap: .75rem; }
+  .df-sig {
+    display: flex; align-items: center; gap: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+  }
+  .df-sig-icon {
+    width: 36px; height: 36px; flex-shrink: 0;
+    border-radius: .625rem;
+    background: var(--gold-dim);
+    border: 1px solid var(--gold-border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+  }
+  .df-sig h4 { font-size: .88rem; font-weight: 500; color: #fff; }
+  .df-sig p { font-size: .78rem; color: var(--text-muted); }
+
+  /* ─── NUMBERS ─────────────────────────────────────────────────── */
+  .numbers-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-top: 3rem; }
+  @media (max-width: 768px) { .numbers-grid { grid-template-columns: repeat(2,1fr); } }
+  .num-cell { background: var(--navy-card); padding: 2rem 1.5rem; }
+  .num-val { font-family: var(--font-head); font-size: 2rem; font-weight: 800; color: var(--gold); }
+  .num-label { font-size: .82rem; color: var(--text-muted); margin-top: .35rem; }
+
+  /* ─── CTA FINAL ──────────────────────────────────────────────── */
+  .cta-final {
+    text-align: center;
+    padding: 5rem 2rem;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .cta-final h2 { margin-bottom: 1rem; }
+  .cta-final p { font-size: 1.05rem; color: var(--text-muted); margin-bottom: 2.5rem; line-height: 1.8; }
+  .cta-final .hero-ctas { justify-content: center; }
+
+  /* ─── FOOTER ─────────────────────────────────────────────────── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 4rem 0 2rem;
+  }
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
+    gap: 2.5rem;
+    padding-bottom: 3rem;
+    border-bottom: 1px solid var(--border);
+  }
+  @media (max-width: 900px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+  .footer-brand { grid-column: 1; }
+  @media (max-width: 900px) { .footer-brand { grid-column: 1 / -1; } }
+  .footer-brand p { font-size: .85rem; color: var(--text-muted); line-height: 1.8; max-width: 280px; margin: 1rem 0 1.5rem; }
+  .footer-col h4 { font-family: var(--font-head); font-size: .75rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 1rem; }
+  .footer-col a { display: block; font-size: .85rem; color: var(--text-muted); text-decoration: none; margin-bottom: .5rem; transition: color .2s; }
+  .footer-col a:hover { color: var(--gold); }
+  .footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 2rem; flex-wrap: wrap; gap: 1rem; }
+  .footer-bottom p { font-size: .78rem; color: var(--text-dim); }
+  .footer-bottom a { font-size: .78rem; color: var(--text-dim); text-decoration: none; }
+  .footer-bottom a:hover { color: var(--gold); }
+
+  /* ─── SEPARATOR ──────────────────────────────────────────────── */
+  .sep { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+  /* ─── SCROLL MARGIN ──────────────────────────────────────────── */
+  [id] { scroll-margin-top: 5rem; }
+
+  /* ─── MOBILE NAV ─────────────────────────────────────────────── */
+  .mobile-nav-btn { display: none; background: none; border: 1px solid var(--border); border-radius: .5rem; padding: .45rem .7rem; color: var(--text); cursor: pointer; font-size: 1rem; }
+  @media (max-width: 768px) { .mobile-nav-btn { display: block; } nav { display: none; } }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════ HEADER ══ -->
+<header>
+  <div class="header-inner">
+    <a href="#top" class="logo-wrap">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 1L22 4.5V14.5C22 20 17 24.5 12 27C7 24.5 2 20 2 14.5V4.5L12 1Z" stroke="#D4AF37" stroke-width="1.5" fill="rgba(212,175,55,0.08)"/>
+          <path d="M8 14l3 3 5-5" stroke="#D4AF37" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-
-      <div className="leading-tight">
-        <div className="text-[10px] uppercase tracking-[0.18em] text-slate-400">
-          Disponible sur
-        </div>
-        <div className="text-sm font-semibold text-white">Google Play</div>
+      <div>
+        <div class="logo-name">SÉCURIX</div>
+        <div class="logo-sub">preuve vidéo certifiée</div>
       </div>
     </a>
-  );
-}
 
-const pillars = [
-  {
-    title: "Rigueur probatoire",
-    text: "Chaque preuve repose sur une structure documentaire cohérente, lisible et exploitable.",
-  },
-  {
-    title: "Intégrité technique",
-    text: "Double empreinte SHA-256, cohérence entre les supports et détection immédiate de toute altération.",
-  },
-  {
-    title: "Horodatage indépendant",
-    text: "Ancrage OpenTimestamps sur Bitcoin pour attester l’existence d’une donnée à une date donnée.",
-  },
-];
+    <nav>
+      <div class="nav-group">
+        <a href="#fonctionnement">Produit</a>
+        <div class="dropdown">
+          <a href="#fonctionnement">Vue d'ensemble</a>
+          <a href="#pipeline">Pipeline probatoire</a>
+          <a href="#verification">Vérification</a>
+          <a href="#dossier">Dossier de preuve</a>
+          <a href="#offline">Hors ligne</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <a href="#usecases">Cas d'usage</a>
+        <div class="dropdown">
+          <a href="#usecases">Journalisme</a>
+          <a href="#usecases">Sécurité</a>
+          <a href="#usecases">Assurance</a>
+          <a href="#usecases">Chantier / BTP</a>
+          <a href="#usecases">Immobilier</a>
+          <a href="#usecases">Protection personnelle</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <a href="#cadre-probatoire">Ressources</a>
+        <div class="dropdown">
+          <a href="#cadre-probatoire">Cadre probatoire</a>
+          <a href="#">Documentation</a>
+          <a href="#">FAQ</a>
+          <a href="#">Politique de confidentialité</a>
+        </div>
+      </div>
+      <a href="#about">À propos</a>
+    </nav>
 
-const proofItems = [
-  "Vidéo originale",
-  "Vidéo scellée",
-  "Identifiant unique de preuve",
-  "Hash SHA-256 original",
-  "Hash SHA-256 scellé",
-  "Métadonnées GPS et horodatage",
-  "Fichier JSON de preuve",
-  "Certificat PDF",
-  "Preuve OpenTimestamps (.ots)",
-  "Empreinte appareil",
-];
+    <a href="https://play.google.com/store/apps/details?id=com.example.fideo" target="_blank" class="btn-play">
+      <svg class="play-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 2L14.5 12L3 22V2Z" fill="#00D26A"/>
+        <path d="M14.5 12L18.2 8.4L21 10C22.2 10.7 22.2 13.3 21 14L18.2 15.6L14.5 12Z" fill="#FFD24A"/>
+        <path d="M3 2L11.4 10.4L14.5 12L18.2 8.4L3 2Z" fill="#4AA3FF"/>
+        <path d="M3 22L11.4 13.6L14.5 12L18.2 15.6L3 22Z" fill="#FF5252"/>
+      </svg>
+      <span style="font-size:.82rem;color:#fff;">Google Play</span>
+    </a>
+  </div>
+</header>
 
-const statusItems = [
-  {
-    code: "LCL",
-    title: "Preuve sauvegardée localement",
-    text: "La preuve est immédiatement conservée sur l’appareil, même hors connexion.",
-  },
-  {
-    code: "CLD",
-    title: "Synchronisation cloud",
-    text: "Les données de preuve sont ensuite synchronisées vers l’espace cloud de l’utilisateur.",
-  },
-  {
-    code: "BTC",
-    title: "Ancrage blockchain",
-    text: "Le hash de la vidéo scellée est ancré via OpenTimestamps sur Bitcoin.",
-  },
-];
+<!-- ════════════════════════════════════ HERO ══ -->
+<main id="top">
+<section class="hero">
+  <div>
+    <div class="hero-badge">Structure probatoire mobile</div>
 
-const workflow = [
-  {
-    step: "1",
-    title: "Capture sécurisée",
-    text: "Enregistrement vidéo avec horodatage, GPS et contexte de preuve visible dès la captation.",
-  },
-  {
-    step: "2",
-    title: "Scellement",
-    text: "Création d’une vidéo scellée, génération des empreintes cryptographiques et attribution d’un identifiant unique.",
-  },
-  {
-    step: "3",
-    title: "Structuration du dossier",
-    text: "Constitution d’un ensemble cohérent incluant vidéo, JSON, certificat PDF, métadonnées et statuts.",
-  },
-  {
-    step: "4",
-    title: "Synchronisation et ancrage",
-    text: "Sauvegarde locale immédiate, synchronisation cloud et ancrage blockchain dès que la connectivité le permet.",
-  },
-];
+    <h1>Une preuve vidéo <em>structurée</em>,<br>conçue pour durer.</h1>
 
-const flowSteps = [
-  { label: "Capture", time: "t = 0" },
-  { label: "Hash", time: "" },
-  { label: "Scellement", time: "" },
-  { label: "Métadonnées", time: "" },
-  { label: "Identifiant", time: "" },
-  { label: "Dossier", time: "" },
-];
+    <p class="hero-desc">
+      Sécurix ne se limite pas à enregistrer une vidéo. L'application génère un dossier de preuve cohérent associant capture, horodatage, géolocalisation, empreintes cryptographiques, identifiant unique, certificat PDF et ancrage blockchain.
+    </p>
 
-const flowBranches = [
-  {
-    title: "À partir du scellement",
-    items: ["SHA-256 original", "SHA-256 scellé"],
-  },
-  {
-    title: "À partir des métadonnées",
-    items: ["GPS", "Horodatage", "Empreinte appareil"],
-  },
-  {
-    title: "À partir du dossier",
-    items: ["JSON", "PDF", ".OTS", "LCL / CLD / BTC"],
-  },
-];
+    <div class="hero-ctas">
+      <a href="https://play.google.com/store/apps/details?id=com.example.fideo" target="_blank" class="btn-primary">
+        <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none"><path d="M3 2L14.5 12L3 22V2Z" fill="#0A1628"/><path d="M14.5 12L18.2 8.4L21 10C22.2 10.7 22.2 13.3 21 14L18.2 15.6L14.5 12Z" fill="#0A1628"/><path d="M3 2L11.4 10.4L14.5 12L18.2 8.4L3 2Z" fill="#0A1628"/><path d="M3 22L11.4 13.6L14.5 12L18.2 15.6L3 22Z" fill="#0A1628"/></svg>
+        Télécharger
+      </a>
+      <a href="#fonctionnement" class="btn-outline">Voir le fonctionnement</a>
+      <a href="/verify" class="btn-ghost">Vérifier une preuve</a>
+    </div>
 
-export default function FideoWebsiteLandingPage() {
-  return (
-    <div className="min-h-screen bg-[#0F1B2E] text-white">
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0F1B2E]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          <a href="#top" className="flex items-center gap-3">
-            <ShieldBadge className="h-11 w-11" />
-            <div>
-              <div className="text-xl font-semibold tracking-[0.25em] text-[#D4AF37]">
-                FIDÉO
-              </div>
-              <div className="text-xs text-slate-400">
-                preuve vidéo certifiée
-              </div>
-            </div>
-          </a>
+    <p style="margin-top:1.25rem;font-size:.8rem;color:var(--text-dim);">Disponible gratuitement sur Google Play · Android</p>
+  </div>
 
-          <div className="hidden items-center gap-8 md:flex">
-            <nav className="flex items-center gap-8 text-sm text-slate-300">
-              <a
-                href="#fonctionnement"
-                className="transition hover:text-[#D4AF37]"
-              >
-                Fonctionnement
-              </a>
-              <a
-                href="#cadre-probatoire"
-                className="transition hover:text-[#D4AF37]"
-              >
-                Cadre probatoire
-              </a>
-              <a
-                href="#verification"
-                className="transition hover:text-[#D4AF37]"
-              >
-                Vérification
-              </a>
-            </nav>
+  <!-- Proof Card -->
+  <div class="proof-card">
+    <div class="proof-card-inner">
+      <div class="proof-card-head">
+        <div>
+          <div class="proof-id-label">Dossier de preuve</div>
+          <div class="proof-id">SECURIX-OiO-20260404-722UBU</div>
+        </div>
+        <div class="badge-ok">Confirmée ✓</div>
+      </div>
 
-            <GooglePlayBadge href={PLAY_STORE_URL} />
+      <div class="proof-grid">
+        <div class="proof-cell">
+          <div class="proof-cell-label">Fichier scellé</div>
+          <div class="proof-cell-val" style="font-size:.76rem;">SECURIX-…-722UBU_sealed.mp4</div>
+        </div>
+        <div class="proof-cell">
+          <div class="proof-cell-label">Blockchain</div>
+          <div class="proof-cell-val gold">OpenTimestamps / BTC</div>
+        </div>
+        <div class="proof-cell">
+          <div class="proof-cell-label">GPS</div>
+          <div class="proof-cell-val">48.792389, 2.608312</div>
+        </div>
+        <div class="proof-cell">
+          <div class="proof-cell-label">Horodatage</div>
+          <div class="proof-cell-val">04/04/2026 01:58:41</div>
+        </div>
+      </div>
+
+      <div class="hash-box">
+        <div class="hash-label">SHA-256 vidéo scellée</div>
+        <div class="hash-val">c3394cb9221aa563c7599416dab6a20886551923eb53bd2d6dbcff3f470b96df</div>
+      </div>
+
+      <div class="status-row">
+        <div class="status-chip"><div class="code">LCL ✓</div><div class="lbl">Local</div></div>
+        <div class="status-chip"><div class="code">CLD ✓</div><div class="lbl">Cloud</div></div>
+        <div class="status-chip"><div class="code">BTC ✓</div><div class="lbl">Bitcoin</div></div>
+      </div>
+
+      <div class="proof-note">Chaque élément est lié : vidéo originale, vidéo scellée, identifiant, hashes, métadonnées, preuve JSON, certificat PDF et ancrage blockchain.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════ PILLARS ══ -->
+<div class="wrap">
+  <div class="pillars">
+    <div class="pillar">
+      <div class="pillar-icon"></div>
+      <h3>Rigueur probatoire</h3>
+      <p>Chaque preuve repose sur une structure documentaire cohérente, lisible et exploitable.</p>
+    </div>
+    <div class="pillar">
+      <div class="pillar-icon"></div>
+      <h3>Intégrité technique</h3>
+      <p>Double empreinte SHA-256, cohérence entre les supports et détection immédiate de toute altération.</p>
+    </div>
+    <div class="pillar">
+      <div class="pillar-icon"></div>
+      <h3>Horodatage indépendant</h3>
+      <p>Ancrage OpenTimestamps sur Bitcoin pour attester l'existence d'une donnée à une date donnée.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════ PROBLEM / ANSWER ══ -->
+<div class="wrap" style="padding-top:3rem;padding-bottom:2rem;">
+  <div class="problem-band">
+    <div>
+      <div class="problem-label">Le problème</div>
+      <div class="problem-text">Les images et vidéos peuvent être copiées, altérées, sorties de leur contexte ou générées artificiellement.</div>
+    </div>
+    <div class="divider-v"></div>
+    <div>
+      <div class="problem-label">La réponse Sécurix</div>
+      <div class="problem-text">Créer dès la captation une structure documentaire cohérente, vérifiable et défendable.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ FONCTIONNEMENT ══ -->
+<div class="wrap sec" id="fonctionnement">
+  <div class="sec-tag">Fonctionnement</div>
+  <h2>De la captation à la preuve</h2>
+  <p class="sec-desc">Chaque enregistrement suit une chaîne structurée visant à préserver l'intégrité du contenu, documenter son contexte et faciliter une vérification ultérieure.</p>
+
+  <div class="workflow-grid">
+    <div class="wf-card">
+      <div class="wf-step">01</div>
+      <h3>Capture sécurisée</h3>
+      <p>Enregistrement vidéo avec horodatage, GPS et contexte de preuve visible dès la captation.</p>
+    </div>
+    <div class="wf-card">
+      <div class="wf-step">02</div>
+      <h3>Scellement</h3>
+      <p>Création d'une vidéo scellée, génération des empreintes cryptographiques et attribution d'un identifiant unique.</p>
+    </div>
+    <div class="wf-card">
+      <div class="wf-step">03</div>
+      <h3>Structuration du dossier</h3>
+      <p>Constitution d'un ensemble cohérent incluant vidéo, JSON, certificat PDF, métadonnées et statuts.</p>
+    </div>
+    <div class="wf-card">
+      <div class="wf-step">04</div>
+      <h3>Synchronisation et ancrage</h3>
+      <p>Sauvegarde locale immédiate, synchronisation cloud et ancrage blockchain dès que la connectivité le permet.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════ PIPELINE ══ -->
+<div class="wrap" id="pipeline" style="padding-bottom:5rem;">
+  <div class="sec-tag">Flux continu de traitement</div>
+  <h2>Chaîne de traitement en flux continu</h2>
+  <p class="sec-desc">Les opérations critiques s'enchaînent dans un flux unique quasi instantané. La preuve se structure pendant la captation, pas après.</p>
+
+  <div class="pipeline-shell">
+    <div class="pipeline-header">
+      <div>
+        <div class="pipeline-title">Pipeline probatoire</div>
+        <div class="pipeline-sub">Exécution quasi instantanée en flux continu</div>
+      </div>
+      <div class="pipeline-time">t → t + ε</div>
+    </div>
+
+    <div class="pipeline-nodes">
+      <div class="pipeline-line"></div>
+      <div class="pipeline-pulse"></div>
+
+      <div class="pipeline-steps">
+        <div class="pnode" style="--d:0s">
+          <div class="pnode-dot" style="animation-delay:0s"><div class="pnode-core" style="animation-delay:0s"></div></div>
+          <div class="pnode-card" style="animation-delay:0s">
+            <div class="pnode-t">t = 0</div>
+            <div class="pnode-label">Capture</div>
           </div>
         </div>
-      </header>
-
-      <main id="top">
-        <section className="mx-auto max-w-7xl px-6 py-20 md:py-28">
-          <div className="grid gap-14 md:grid-cols-[1.08fr_0.92fr] md:items-center">
-            <div className="max-w-4xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-4 py-2 text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">
-                Structure probatoire mobile
-              </div>
-
-              <h1 className="mt-8 text-5xl font-semibold leading-tight text-white md:text-6xl">
-                Une preuve vidéo structurée,
-                conçue pour documenter,
-                préserver et vérifier.
-              </h1>
-
-              <p className="mt-8 text-lg leading-8 text-slate-300">
-                FIDÉO ne se limite pas à enregistrer une vidéo. L’application
-                génère un dossier de preuve cohérent associant capture,
-                horodatage, géolocalisation, empreintes cryptographiques,
-                identifiant unique, certificat PDF et ancrage blockchain.
-              </p>
-
-              <p className="mt-6 text-lg leading-8 text-slate-300">
-                Disponible sur Google Play, l’application a été pensée pour une
-                utilisation mobile immédiate, y compris dans des contextes où la
-                connexion réseau n’est pas garantie.
-              </p>
-
-              <div className="mt-10 flex flex-wrap items-center gap-4">
-                <GooglePlayBadge
-                  href={PLAY_STORE_URL}
-                  className="min-w-[210px]"
-                />
-
-                <a
-                  href="#fonctionnement"
-                  className="rounded-2xl border border-white/15 px-6 py-3 font-medium text-white transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
-                >
-                  Voir le fonctionnement
-                </a>
-
-                <Link
-                  href="/verify"
-                  className="rounded-2xl border border-[#D4AF37]/30 px-6 py-3 font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/10"
-                >
-                  Vérifier une preuve
-                </Link>
-              </div>
-
-              <p className="mt-5 text-sm leading-7 text-slate-400">
-                Téléchargement et installation via le Google Play Store.
-              </p>
-            </div>
-
-            <div className="rounded-[2rem] border border-[#D4AF37]/20 bg-white/5 p-5 shadow-2xl shadow-black/30">
-              <div className="rounded-[1.5rem] border border-white/10 bg-[#13233A] p-5">
-                <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
-                  <div>
-                    <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                      Dossier de preuve
-                    </div>
-                    <div className="mt-2 text-lg font-semibold text-white">
-                      FIDEO-OiO-20260404-722UBU
-                    </div>
-                  </div>
-
-                  <div className="rounded-full border border-green-400/30 bg-green-500/10 px-3 py-1 text-sm font-medium text-green-300">
-                    Confirmée ✓
-                  </div>
-                </div>
-
-                <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                      Fichier scellé
-                    </div>
-                    <div className="mt-2 text-sm text-white">
-                      FIDEO-OiO-20260404-722UBU_sealed.mp4
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                      Blockchain
-                    </div>
-                    <div className="mt-2 text-sm text-[#D4AF37]">
-                      OpenTimestamps / Bitcoin
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                      GPS
-                    </div>
-                    <div className="mt-2 text-sm text-white">
-                      48.792389, 2.608312
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                      Horodatage
-                    </div>
-                    <div className="mt-2 text-sm text-white">
-                      04/04/2026 01:58:41
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-2xl border border-white/10 bg-[#0F1B2E] p-4">
-                  <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                    SHA-256 vidéo scellée
-                  </div>
-                  <div className="mt-2 break-all font-mono text-xs leading-6 text-slate-300">
-                    c3394cb9221aa563c7599416dab6a20886551923eb53bd2d6dbcff3f470b96df
-                  </div>
-                </div>
-
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-center text-xs text-slate-300">
-                    <span className="font-semibold text-green-300">LCL ✓</span>
-                    <div className="mt-1 text-[11px] text-slate-400">Local</div>
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-center text-xs text-slate-300">
-                    <span className="font-semibold text-green-300">CLD ✓</span>
-                    <div className="mt-1 text-[11px] text-slate-400">Cloud</div>
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-center text-xs text-slate-300">
-                    <span className="font-semibold text-green-300">BTC ✓</span>
-                    <div className="mt-1 text-[11px] text-slate-400">
-                      Bitcoin
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-2xl border border-blue-400/20 bg-blue-500/10 p-4 text-sm leading-7 text-slate-200">
-                  Chaque élément est lié : vidéo originale, vidéo scellée,
-                  identifiant, hashes, métadonnées, preuve JSON, certificat PDF
-                  et ancrage blockchain.
-                </div>
-              </div>
-            </div>
+        <div class="pnode">
+          <div class="pnode-dot" style="animation-delay:.64s"><div class="pnode-core" style="animation-delay:.64s"></div></div>
+          <div class="pnode-card" style="animation-delay:.64s">
+            <div class="pnode-t">t + ε</div>
+            <div class="pnode-label">Hash</div>
           </div>
-        </section>
-
-        <section className="mx-auto max-w-7xl px-6 pb-20">
-          <div className="grid gap-6 md:grid-cols-3">
-            {pillars.map((p) => (
-              <div
-                key={p.title}
-                className="rounded-2xl border border-white/10 bg-white/5 p-6"
-              >
-                <div className="mb-4 h-9 w-9 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10" />
-                <h3 className="text-lg font-semibold text-white">{p.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-slate-300">
-                  {p.text}
-                </p>
-              </div>
-            ))}
+        </div>
+        <div class="pnode">
+          <div class="pnode-dot" style="animation-delay:1.28s"><div class="pnode-core" style="animation-delay:1.28s"></div></div>
+          <div class="pnode-card" style="animation-delay:1.28s">
+            <div class="pnode-t">t + ε</div>
+            <div class="pnode-label">Scellement</div>
           </div>
-        </section>
-
-        <section className="mx-auto max-w-7xl px-6 pb-24">
-          <div className="rounded-3xl border border-[#D4AF37]/20 bg-gradient-to-br from-[#13233A] to-[#0F1B2E] p-8 md:p-10">
-            <h2 className="text-3xl font-semibold text-white md:text-4xl">
-              Une logique de preuve, pas un simple fichier.
-            </h2>
-
-            <p className="mt-6 max-w-4xl text-lg leading-8 text-slate-300">
-              Une vidéo isolée reste fragile. Elle peut être copiée, sortie de
-              son contexte, altérée ou contestée. FIDÉO transforme
-              l’enregistrement en un ensemble structuré reliant la captation,
-              les métadonnées, les empreintes cryptographiques, les supports
-              documentaires et la preuve d’existence indépendante.
-            </p>
+        </div>
+        <div class="pnode">
+          <div class="pnode-dot" style="animation-delay:1.92s"><div class="pnode-core" style="animation-delay:1.92s"></div></div>
+          <div class="pnode-card" style="animation-delay:1.92s">
+            <div class="pnode-t">t + ε</div>
+            <div class="pnode-label">Métadonnées</div>
           </div>
-        </section>
-
-        <section
-          id="fonctionnement"
-          className="mx-auto max-w-7xl scroll-mt-28 px-6 pb-24"
-        >
-          <div className="mb-12 max-w-3xl">
-            <h2 className="text-3xl font-semibold text-white md:text-4xl">
-              Fonctionnement
-            </h2>
-            <p className="mt-6 text-lg leading-8 text-slate-300">
-              Chaque enregistrement suit une chaîne structurée visant à
-              préserver l’intégrité du contenu, documenter son contexte et
-              faciliter une vérification ultérieure.
-            </p>
+        </div>
+        <div class="pnode">
+          <div class="pnode-dot" style="animation-delay:2.56s"><div class="pnode-core" style="animation-delay:2.56s"></div></div>
+          <div class="pnode-card" style="animation-delay:2.56s">
+            <div class="pnode-t">t + ε</div>
+            <div class="pnode-label">Identifiant</div>
           </div>
-
-          <div className="grid gap-6 md:grid-cols-4">
-            {workflow.map((item) => (
-              <div
-                key={item.step}
-                className="rounded-2xl border border-white/10 bg-white/5 p-6"
-              >
-                <div className="text-lg font-bold text-[#D4AF37]">
-                  {item.step}
-                </div>
-                <h3 className="mt-2 font-semibold text-white">{item.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-slate-300">
-                  {item.text}
-                </p>
-              </div>
-            ))}
+        </div>
+        <div class="pnode">
+          <div class="pnode-dot" style="animation-delay:3.2s"><div class="pnode-core" style="animation-delay:3.2s"></div></div>
+          <div class="pnode-card" style="animation-delay:3.2s">
+            <div class="pnode-t">t + ε</div>
+            <div class="pnode-label">Dossier</div>
           </div>
-        </section>
+        </div>
+      </div>
 
-        <section className="mx-auto max-w-7xl px-6 pb-24">
-          <div className="rounded-3xl border border-[#D4AF37]/20 bg-gradient-to-br from-[#13233A] to-[#0F1B2E] p-8 md:p-10">
-            <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-[#D4AF37]">
-                Flux continu de traitement
-              </div>
-
-              <h2 className="mt-6 text-3xl font-semibold text-white md:text-4xl">
-                Chaîne de traitement en flux continu
-              </h2>
-
-              <p className="mt-6 text-lg leading-8 text-slate-300">
-                Lors de la prise vidéo, les opérations critiques s’enchaînent
-                dans un flux unique et quasi instantané. L’objectif n’est pas
-                d’ajouter des couches après coup, mais de structurer la preuve
-                pendant le processus de captation.
-              </p>
-            </div>
-
-            <div className="mt-12 overflow-hidden rounded-3xl border border-white/10 bg-[#0C1626]/90 p-6 md:p-8">
-              <div className="mb-8 flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-sm font-semibold uppercase tracking-[0.18em] text-[#D4AF37]">
-                    Pipeline probatoire
-                  </div>
-                  <div className="mt-2 text-sm text-slate-400">
-                    Exécution quasi instantanée en flux continu
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-2 font-mono text-sm text-[#D4AF37]">
-                  t → t + ε
-                </div>
-              </div>
-
-              <div className="relative pb-20">
-                <div className="absolute left-0 right-0 top-[42px] h-[2px] bg-white/10" />
-                <div className="flow-pulse absolute left-0 right-0 top-[36px] h-[14px]" />
-
-                <div className="grid gap-4 md:grid-cols-6">
-                  {flowSteps.map((step, index) => {
-                    const delay = `${index * 0.64}s`;
-
-                    return (
-                      <div key={step.label} className="relative text-center">
-                        <div
-                          className="flow-node relative z-10 mx-auto flex h-5 w-5 items-center justify-center rounded-full border border-[#D4AF37]/40 bg-[#0F1B2E]"
-                          style={{ animationDelay: delay }}
-                        >
-                          <div
-                            className="flow-node-core h-2.5 w-2.5 rounded-full bg-[#D4AF37]"
-                            style={{ animationDelay: delay }}
-                          />
-                        </div>
-
-                        <div
-                          className="flow-card mt-5 rounded-2xl border border-white/10 bg-white/5 p-4"
-                          style={{ animationDelay: delay }}
-                        >
-                          <div className="text-[11px] font-mono tracking-[0.18em] text-[#D4AF37]">
-  {step.label === "Capture" ? "t = 0" : <>t + {"\u03B5"}</>}
-</div>
-                          <div className="mt-2 text-sm font-semibold text-white">
-                            {step.label}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-12 grid gap-6 md:grid-cols-3">
-                  {flowBranches.map((branch, index) => (
-                    <div
-                      key={branch.title}
-                      className="flow-branch rounded-2xl border border-white/10 bg-white/5 p-5"
-                      style={{ animationDelay: `${2.8 + index * 0.32}s` }}
-                    >
-                      <div className="mb-4 flex items-center gap-3">
-                        <div className="flow-branch-dot h-2 w-2 rounded-full bg-[#D4AF37]" />
-                        <h3 className="text-sm font-semibold text-white">
-                          {branch.title}
-                        </h3>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        {branch.items.map((item) => (
-                          <span
-                            key={item}
-                            className="rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/10 px-3 py-2 text-xs text-slate-200"
-                          >
-                            {item}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 p-4 text-sm leading-7 text-slate-200">
-                La preuve ne se constitue pas à posteriori. Capture, scellement,
-                métadonnées, identifiant et structuration documentaire
-                s’enchaînent dans un même mouvement logique.
-              </div>
-            </div>
+      <div class="pipeline-branches" style="margin-top:1.5rem;">
+        <div class="branch-card" style="animation-delay:2.8s">
+          <div class="branch-head"><div class="branch-dot" style="animation-delay:2.8s"></div><div class="branch-title">À partir du scellement</div></div>
+          <div class="branch-tags">
+            <span class="branch-tag">SHA-256 original</span>
+            <span class="branch-tag">SHA-256 scellé</span>
           </div>
-        </section>
-
-        <section className="mx-auto max-w-7xl px-6 pb-24">
-          <div className="mb-12 max-w-3xl">
-            <h2 className="text-3xl font-semibold text-white md:text-4xl">
-              Contenu d’un dossier de preuve
-            </h2>
-            <p className="mt-6 text-lg leading-8 text-slate-300">
-              FIDÉO ne produit pas un seul support, mais un ensemble cohérent
-              d’éléments techniques et documentaires destinés à être lus,
-              partagés et vérifiés ensemble.
-            </p>
+        </div>
+        <div class="branch-card" style="animation-delay:3.12s">
+          <div class="branch-head"><div class="branch-dot" style="animation-delay:3.12s"></div><div class="branch-title">À partir des métadonnées</div></div>
+          <div class="branch-tags">
+            <span class="branch-tag">GPS</span>
+            <span class="branch-tag">Horodatage</span>
+            <span class="branch-tag">Empreinte appareil</span>
           </div>
-
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-            {proofItems.map((item) => (
-              <div
-                key={item}
-                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-sm text-slate-200"
-              >
-                {item}
-              </div>
-            ))}
+        </div>
+        <div class="branch-card" style="animation-delay:3.44s">
+          <div class="branch-head"><div class="branch-dot" style="animation-delay:3.44s"></div><div class="branch-title">À partir du dossier</div></div>
+          <div class="branch-tags">
+            <span class="branch-tag">JSON</span>
+            <span class="branch-tag">PDF</span>
+            <span class="branch-tag">.OTS</span>
+            <span class="branch-tag">LCL / CLD / BTC</span>
           </div>
-        </section>
-
-        <section className="mx-auto max-w-7xl px-6 pb-24">
-          <div className="grid gap-8 md:grid-cols-[0.95fr_1.05fr]">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-              <h2 className="text-3xl font-semibold text-white">
-                Mode hors ligne et reprise
-              </h2>
-              <p className="mt-6 text-lg leading-8 text-slate-300">
-                La preuve est d’abord sécurisée localement. La synchronisation
-                cloud et l’ancrage blockchain peuvent ensuite reprendre
-                automatiquement lorsque la connexion redevient disponible.
-              </p>
-              <p className="mt-4 text-lg leading-8 text-slate-300">
-                Cette logique évite de dépendre d’un réseau au moment critique
-                de la captation.
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-[#13233A] p-8">
-              <h2 className="text-3xl font-semibold text-white">
-                Statuts de confiance
-              </h2>
-              <div className="mt-8 space-y-5">
-                {statusItems.map((item) => (
-                  <div
-                    key={item.code}
-                    className="rounded-2xl border border-white/10 bg-white/5 p-5"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-3 py-1 font-mono text-sm font-semibold text-[#D4AF37]">
-                        {item.code}
-                      </span>
-                      <h3 className="font-semibold text-white">{item.title}</h3>
-                    </div>
-                    <p className="mt-3 text-sm leading-7 text-slate-300">
-                      {item.text}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section
-          id="cadre-probatoire"
-          className="mx-auto max-w-7xl scroll-mt-28 px-6 pb-24"
-        >
-          <div className="mb-12 max-w-3xl">
-            <h2 className="text-3xl font-semibold text-white md:text-4xl">
-              Cadre probatoire
-            </h2>
-
-            <p className="mt-6 text-lg leading-8 text-slate-300">
-              FIDÉO fournit une base technique de conservation, de traçabilité
-              et de vérification. L’application n’a pas vocation à se substituer
-              à l’analyse juridique, mais à renforcer la lisibilité et la
-              robustesse matérielle de la preuve.
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-              <h3 className="text-lg font-semibold text-white">
-                Intégrité du contenu
-              </h3>
-              <p className="mt-4 text-sm leading-7 text-slate-300">
-                Les empreintes SHA-256 permettent de vérifier que les fichiers
-                n’ont pas été modifiés sans détection. Toute altération change
-                immédiatement le résultat.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-              <h3 className="text-lg font-semibold text-white">
-                Horodatage indépendant
-              </h3>
-              <p className="mt-4 text-sm leading-7 text-slate-300">
-                L’ancrage via OpenTimestamps permet d’attester l’existence d’une
-                donnée à une date donnée indépendamment de FIDÉO, sur la base de
-                la blockchain Bitcoin.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-              <h3 className="text-lg font-semibold text-white">
-                Cohérence documentaire
-              </h3>
-              <p className="mt-4 text-sm leading-7 text-slate-300">
-                Vidéo, hashes, identifiant, JSON, certificat PDF, fichier .ots
-                et métadonnées sont rattachés à une même chaîne documentaire.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-12 rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 p-6">
-            <p className="text-sm leading-7 text-slate-200">
-              La valeur probatoire finale dépend toujours du contexte, de la
-              conservation, des conditions de production, de la contradiction et
-              de l’appréciation de l’autorité compétente. FIDÉO renforce la base
-              technique de cette appréciation.
-            </p>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-7xl px-6 pb-24">
-          <div className="grid gap-10 md:grid-cols-2">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-              <h2 className="text-3xl font-semibold text-white">
-                Partager un dossier exploitable
-              </h2>
-              <p className="mt-6 text-lg leading-8 text-slate-300">
-                FIDÉO permet de transmettre à un tiers un ensemble cohérent
-                comprenant les principaux supports nécessaires à une lecture et à
-                une vérification indépendantes.
-              </p>
-
-              <ul className="mt-6 space-y-3 text-sm text-slate-300">
-                <li>✔ vidéo scellée</li>
-                <li>✔ fichier JSON de preuve</li>
-                <li>✔ certificat PDF</li>
-                <li>✔ preuve OpenTimestamps (.ots)</li>
-                <li>✔ hash SHA-256 et identifiant unique</li>
-              </ul>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-[#13233A] p-8">
-              <h2 className="text-3xl font-semibold text-white">
-                Vérification indépendante
-              </h2>
-              <p className="mt-6 text-lg leading-8 text-slate-300">
-                Une preuve peut être relue localement, confrontée à ses
-                métadonnées, contrôlée par hash, et rapprochée de son ancrage
-                blockchain et de ses documents associés.
-              </p>
-
-              <p className="mt-4 text-lg leading-8 text-slate-300">
-                L’objectif n’est pas seulement d’afficher une information, mais
-                de permettre une lecture cohérente de l’ensemble.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section
-          id="verification"
-          className="mx-auto max-w-7xl scroll-mt-28 px-6 pb-24"
-        >
-          <div className="grid items-center gap-10 md:grid-cols-2">
-            <div>
-              <h2 className="text-3xl font-semibold text-white md:text-4xl">
-                Vérifier une preuve
-              </h2>
-
-              <p className="mt-6 text-lg leading-8 text-slate-300">
-                Chaque preuve générée par FIDÉO peut être retrouvée et
-                rapprochée de ses éléments techniques essentiels : identifiant,
-                hashes, horodatage, géolocalisation, statut cloud et ancrage
-                blockchain.
-              </p>
-
-              <ul className="mt-6 space-y-3 text-sm text-slate-300">
-                <li>✔ contrôle des empreintes SHA-256</li>
-                <li>✔ lecture de la cohérence documentaire</li>
-                <li>✔ consultation du statut blockchain</li>
-                <li>✔ rapprochement des éléments associés à une même preuve</li>
-              </ul>
-
-              <div className="mt-8 flex flex-wrap gap-4">
-                <Link
-                  href="/verify"
-                  className="rounded-lg bg-[#D4AF37] px-6 py-3 text-sm font-semibold text-black transition hover:opacity-90"
-                >
-                  Vérifier une preuve
-                </Link>
-
-                <GooglePlayBadge href={PLAY_STORE_URL} />
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-              <p className="text-sm text-slate-400">Exemple d’identifiant</p>
-
-              <div className="mt-4 rounded-lg bg-black/40 p-4 font-mono text-sm text-[#D4AF37]">
-                FIDEO-OiO-20260404-722UBU
-              </div>
-
-              <div className="mt-6 grid gap-3">
-                <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                  <div className="text-xs uppercase tracking-[0.16em] text-slate-500">
-                    Hash scellé
-                  </div>
-                  <div className="mt-2 break-all font-mono text-xs text-slate-300">
-                    c3394cb9221aa563c7599416dab6a20886551923eb53bd2d6dbcff3f470b96df
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                  <div className="text-xs uppercase tracking-[0.16em] text-slate-500">
-                    Supports associés
-                  </div>
-                  <div className="mt-2 text-sm text-slate-300">
-                    sealed.mp4 • JSON • PDF • .OTS
-                  </div>
-                </div>
-              </div>
-
-              <p className="mt-6 text-sm leading-7 text-slate-400">
-                Cet identifiant relie la preuve à l’ensemble de ses supports
-                techniques et documentaires.
-              </p>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <style jsx>{`
-        .flow-pulse::before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: -18%;
-          width: 18%;
-          height: 100%;
-          border-radius: 9999px;
-          background: linear-gradient(
-            90deg,
-            rgba(212, 175, 55, 0),
-            rgba(212, 175, 55, 0.14),
-            rgba(212, 175, 55, 0.72),
-            rgba(255, 246, 200, 0.98),
-            rgba(212, 175, 55, 0.72),
-            rgba(212, 175, 55, 0.14),
-            rgba(212, 175, 55, 0)
-          );
-          filter: blur(2px);
-          animation: pulseLine 4.8s linear infinite;
-        }
-
-        .flow-node {
-          animation: nodePass 4.8s linear infinite;
-        }
-
-        .flow-node-core {
-          animation: nodeCorePass 4.8s linear infinite;
-        }
-
-        .flow-card {
-          opacity: 0.58;
-          animation: cardPass 4.8s linear infinite;
-        }
-
-        .flow-branch {
-          opacity: 0.54;
-          transform: translateY(8px);
-          animation: branchPass 4.8s linear infinite;
-        }
-
-        .flow-branch-dot {
-          animation: branchDotPass 4.8s linear infinite;
-        }
-
-        @keyframes pulseLine {
-          0% {
-            left: -20%;
-            opacity: 0;
-          }
-          6% {
-            opacity: 1;
-          }
-          88% {
-            opacity: 1;
-          }
-          100% {
-            left: 102%;
-            opacity: 0;
-          }
-        }
-
-        @keyframes nodePass {
-          0%,
-          100% {
-            border-color: rgba(212, 175, 55, 0.35);
-            box-shadow: 0 0 0 rgba(212, 175, 55, 0);
-            transform: scale(1);
-            background: #0f1b2e;
-          }
-          10%,
-          22% {
-            border-color: rgba(255, 240, 170, 0.9);
-            box-shadow:
-              0 0 0 4px rgba(212, 175, 55, 0.09),
-              0 0 18px rgba(212, 175, 55, 0.45),
-              0 0 34px rgba(212, 175, 55, 0.22);
-            transform: scale(1.12);
-            background: rgba(28, 43, 66, 0.96);
-          }
-        }
-
-        @keyframes nodeCorePass {
-          0%,
-          100% {
-            background: rgba(212, 175, 55, 0.82);
-            box-shadow: 0 0 0 rgba(255, 243, 179, 0);
-            transform: scale(1);
-          }
-          10%,
-          22% {
-            background: #fff1a8;
-            box-shadow:
-              0 0 10px rgba(255, 241, 168, 0.95),
-              0 0 22px rgba(212, 175, 55, 0.75),
-              0 0 34px rgba(212, 175, 55, 0.45);
-            transform: scale(1.2);
-          }
-        }
-
-        @keyframes cardPass {
-          0%,
-          100% {
-            opacity: 0.58;
-            transform: translateY(0);
-            border-color: rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.04);
-            box-shadow: 0 0 0 rgba(212, 175, 55, 0);
-          }
-          10%,
-          22% {
-            opacity: 1;
-            transform: translateY(-3px);
-            border-color: rgba(212, 175, 55, 0.42);
-            background: rgba(212, 175, 55, 0.08);
-            box-shadow:
-              inset 0 0 0 1px rgba(255, 240, 170, 0.06),
-              0 0 20px rgba(212, 175, 55, 0.12),
-              0 0 42px rgba(212, 175, 55, 0.08);
-          }
-        }
-
-        @keyframes branchPass {
-          0%,
-          100% {
-            opacity: 0.54;
-            transform: translateY(8px);
-            border-color: rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.04);
-            box-shadow: 0 0 0 rgba(212, 175, 55, 0);
-          }
-          12%,
-          28% {
-            opacity: 1;
-            transform: translateY(0);
-            border-color: rgba(212, 175, 55, 0.36);
-            background: rgba(212, 175, 55, 0.06);
-            box-shadow:
-              inset 0 0 0 1px rgba(255, 240, 170, 0.05),
-              0 0 22px rgba(212, 175, 55, 0.1),
-              0 0 36px rgba(212, 175, 55, 0.06);
-          }
-        }
-
-        @keyframes branchDotPass {
-          0%,
-          100% {
-            box-shadow: 0 0 0 rgba(212, 175, 55, 0);
-            transform: scale(1);
-          }
-          12%,
-          28% {
-            box-shadow:
-              0 0 10px rgba(255, 241, 168, 0.9),
-              0 0 20px rgba(212, 175, 55, 0.55);
-            transform: scale(1.18);
-          }
-        }
-      `}</style>
+        </div>
+      </div>
     </div>
-  );
-}
+
+    <div class="pipeline-note">La preuve ne se constitue pas à posteriori. Capture, scellement, métadonnées, identifiant et structuration documentaire s'enchaînent dans un même mouvement logique.</div>
+  </div>
+</div>
+
+<!-- ════ DOSSIER DE PREUVE ══ -->
+<div class="wrap" id="dossier" style="padding-bottom:5rem;">
+  <div class="sec-tag">Contenu</div>
+  <h2>Contenu d'un dossier de preuve</h2>
+  <p class="sec-desc">Sécurix ne produit pas un seul support, mais un ensemble cohérent d'éléments techniques et documentaires destinés à être lus, partagés et vérifiés ensemble.</p>
+
+  <div class="proof-items">
+    <div class="proof-item">Vidéo originale</div>
+    <div class="proof-item">Vidéo scellée</div>
+    <div class="proof-item">Identifiant unique de preuve</div>
+    <div class="proof-item">Hash SHA-256 original</div>
+    <div class="proof-item">Hash SHA-256 scellé</div>
+    <div class="proof-item">Métadonnées GPS</div>
+    <div class="proof-item">Horodatage</div>
+    <div class="proof-item">Fichier JSON de preuve</div>
+    <div class="proof-item">Certificat PDF</div>
+    <div class="proof-item">Preuve OpenTimestamps (.ots)</div>
+  </div>
+</div>
+
+<!-- ════ OFFLINE / STATUTS ══ -->
+<div class="wrap" id="offline" style="padding-bottom:5rem;">
+  <div class="two-col">
+    <div class="card-panel">
+      <h2>Mode hors ligne et reprise</h2>
+      <p>La preuve est d'abord sécurisée localement. La synchronisation cloud et l'ancrage blockchain peuvent ensuite reprendre automatiquement lorsque la connexion redevient disponible.</p>
+      <p style="margin-top:1rem;">Cette logique évite de dépendre d'un réseau au moment critique de la captation.</p>
+    </div>
+    <div class="card-panel dark">
+      <h2>Statuts de confiance</h2>
+      <div class="status-list">
+        <div class="status-item">
+          <div class="status-item-head"><span class="status-code">LCL</span><span class="status-title">Preuve sauvegardée localement</span></div>
+          <p class="status-desc">La preuve est immédiatement conservée sur l'appareil, même hors connexion.</p>
+        </div>
+        <div class="status-item">
+          <div class="status-item-head"><span class="status-code">CLD</span><span class="status-title">Synchronisation cloud</span></div>
+          <p class="status-desc">Les données de preuve sont ensuite synchronisées vers l'espace cloud de l'utilisateur.</p>
+        </div>
+        <div class="status-item">
+          <div class="status-item-head"><span class="status-code">BTC</span><span class="status-title">Ancrage blockchain</span></div>
+          <p class="status-desc">Le hash de la vidéo scellée est ancré via OpenTimestamps sur Bitcoin.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ CAS D'USAGE ══ -->
+<div class="wrap" id="usecases" style="padding-bottom:5rem;">
+  <div class="sec-tag">Cas d'usage</div>
+  <h2>Pensé pour le terrain</h2>
+  <p class="sec-desc">Sécurix s'adresse à tous ceux qui ont besoin de documenter, préserver et défendre une réalité visuelle.</p>
+
+  <div class="usecases-grid">
+    <div class="uc-card">
+      <div class="uc-icon">📰</div>
+      <h3>Journalisme</h3>
+      <p>Documenter sur le terrain avec une preuve d'authenticité exploitable en rédaction ou en justice.</p>
+    </div>
+    <div class="uc-card">
+      <div class="uc-icon">🛡️</div>
+      <h3>Sécurité</h3>
+      <p>Constater des faits avec une chaîne documentaire solide dès l'intervention.</p>
+    </div>
+    <div class="uc-card">
+      <div class="uc-icon">📋</div>
+      <h3>Assurance</h3>
+      <p>Produire une preuve horodatée et géolocalisée pour appuyer un sinistre ou un état des lieux.</p>
+    </div>
+    <div class="uc-card">
+      <div class="uc-icon">🏗️</div>
+      <h3>BTP / Chantier</h3>
+      <p>Documenter l'avancement, les malfaçons ou les incidents avec une preuve incontestable.</p>
+    </div>
+    <div class="uc-card">
+      <div class="uc-icon">🏠</div>
+      <h3>Immobilier</h3>
+      <p>État des lieux, constat de dégradation ou documentation de bien avec preuve intégrée.</p>
+    </div>
+    <div class="uc-card">
+      <div class="uc-icon">👤</div>
+      <h3>Protection personnelle</h3>
+      <p>Documenter un incident, une situation ou un fait avec une structure de preuve dès l'enregistrement.</p>
+    </div>
+    <div class="uc-card">
+      <div class="uc-icon">📁</div>
+      <h3>Documentation d'incident</h3>
+      <p>Constituer immédiatement un dossier structuré pour tout événement à documenter.</p>
+    </div>
+    <div class="uc-card">
+      <div class="uc-icon">🔍</div>
+      <h3>Lutte contre la désinformation</h3>
+      <p>Attester de l'authenticité d'une captation face aux deepfakes et aux manipulations numériques.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════ ANTI-DEEPFAKE ══ -->
+<div class="wrap" style="padding-bottom:5rem;">
+  <div class="deepfake-band">
+    <div>
+      <div class="sec-tag" style="margin-bottom:1.25rem;">Anti-falsification</div>
+      <h2>Un rempart contre les deepfakes</h2>
+      <p>À l'heure où n'importe quelle vidéo peut être générée ou altérée, Sécurix crée une chaîne de confiance ancrée dès la captation.</p>
+      <p>L'identité cryptographique du fichier, l'empreinte de l'appareil et l'ancrage blockchain permettent de distinguer une vidéo native d'une vidéo manipulée ou générée.</p>
+    </div>
+    <div class="deepfake-signals">
+      <div class="df-sig">
+        <div class="df-sig-icon">🔐</div>
+        <div>
+          <h4>Hash SHA-256 natif</h4>
+          <p>Calculé au moment de la captation, avant tout traitement ultérieur.</p>
+        </div>
+      </div>
+      <div class="df-sig">
+        <div class="df-sig-icon">📱</div>
+        <div>
+          <h4>Empreinte appareil</h4>
+          <p>Lie la preuve à l'appareil physique ayant réalisé la captation.</p>
+        </div>
+      </div>
+      <div class="df-sig">
+        <div class="df-sig-icon">⛓️</div>
+        <div>
+          <h4>Ancrage blockchain</h4>
+          <p>Preuve d'existence indépendante de Sécurix sur la blockchain Bitcoin.</p>
+        </div>
+      </div>
+      <div class="df-sig">
+        <div class="df-sig-icon">📍</div>
+        <div>
+          <h4>GPS + horodatage</h4>
+          <p>Contexte spatio-temporel non altérable lié à chaque preuve.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ CADRE PROBATOIRE ══ -->
+<div class="wrap sec" id="cadre-probatoire">
+  <div class="sec-tag">Cadre probatoire</div>
+  <h2>Une base technique sérieuse</h2>
+  <p class="sec-desc">Sécurix fournit une base technique de conservation, de traçabilité et de vérification. L'application n'a pas vocation à se substituer à l'analyse juridique.</p>
+
+  <div class="framework-grid">
+    <div class="fw-card">
+      <h3>Intégrité du contenu</h3>
+      <p>Les empreintes SHA-256 permettent de vérifier que les fichiers n'ont pas été modifiés. Toute altération change immédiatement le résultat.</p>
+    </div>
+    <div class="fw-card">
+      <h3>Horodatage indépendant</h3>
+      <p>L'ancrage via OpenTimestamps permet d'attester l'existence d'une donnée à une date donnée, indépendamment de Sécurix, sur Bitcoin.</p>
+    </div>
+    <div class="fw-card">
+      <h3>Cohérence documentaire</h3>
+      <p>Vidéo, hashes, identifiant, JSON, certificat PDF, fichier .ots et métadonnées sont rattachés à une même chaîne documentaire.</p>
+    </div>
+    <div class="fw-card">
+      <h3>Provenance</h3>
+      <p>L'empreinte appareil et les métadonnées de captation documentent l'origine technique de la preuve.</p>
+    </div>
+    <div class="fw-card">
+      <h3>Conservation</h3>
+      <p>Sauvegarde locale immédiate, synchronisation cloud et archivage structuré garantissent la pérennité du dossier.</p>
+    </div>
+    <div class="fw-card">
+      <h3>Vérification indépendante</h3>
+      <p>Chaque preuve peut être contrôlée par un tiers à partir des hashes, de l'identifiant et du fichier .ots sans dépendre de Sécurix.</p>
+    </div>
+  </div>
+
+  <div class="fw-disclaimer">
+    La valeur probatoire finale dépend toujours du contexte, des conditions de production, de la contradiction et de l'appréciation de l'autorité compétente. Sécurix renforce la base technique de cette appréciation, sans se substituer au droit.
+  </div>
+</div>
+
+<!-- ════ PARTAGER / VÉRIFIER ══ -->
+<div class="wrap" style="padding-bottom:5rem;">
+  <div class="two-col">
+    <div class="card-panel">
+      <h2>Partager un dossier exploitable</h2>
+      <p>Sécurix permet de transmettre à un tiers un ensemble cohérent comprenant les principaux supports nécessaires à une lecture et une vérification indépendantes.</p>
+      <ul class="share-list">
+        <li>Vidéo scellée</li>
+        <li>Fichier JSON de preuve</li>
+        <li>Certificat PDF</li>
+        <li>Preuve OpenTimestamps (.ots)</li>
+        <li>Hash SHA-256 et identifiant unique</li>
+      </ul>
+    </div>
+    <div class="card-panel dark" id="verification">
+      <h2>Vérification indépendante</h2>
+      <p>Une preuve peut être relue localement, confrontée à ses métadonnées, contrôlée par hash, et rapprochée de son ancrage blockchain et de ses documents associés.</p>
+      <div class="verify-box">
+        <p style="font-size:.8rem;color:var(--text-dim);margin-bottom:.4rem;">Exemple d'identifiant</p>
+        <div class="verify-id">SECURIX-OiO-20260404-722UBU</div>
+        <div class="verify-meta">
+          <div class="verify-row">
+            <div class="verify-row-label">Hash scellé</div>
+            <div class="verify-row-val">c3394cb9221aa563c7599416dab6a20886551923eb53bd2d6dbcff3f470b96df</div>
+          </div>
+          <div class="verify-row">
+            <div class="verify-row-label">Supports associés</div>
+            <div class="verify-row-val">sealed.mp4 · JSON · PDF · .OTS</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:1.5rem;">
+        <a href="/verify" class="btn-primary" style="display:inline-flex;">Vérifier une preuve →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ NUMBERS ══ -->
+<div class="wrap" style="padding-bottom:5rem;">
+  <div class="numbers-grid">
+    <div class="num-cell">
+      <div class="num-val">10+</div>
+      <div class="num-label">éléments par dossier de preuve</div>
+    </div>
+    <div class="num-cell">
+      <div class="num-val">3</div>
+      <div class="num-label">niveaux de statut de confiance</div>
+    </div>
+    <div class="num-cell">
+      <div class="num-val">BTC</div>
+      <div class="num-label">ancrage blockchain indépendant</div>
+    </div>
+    <div class="num-cell">
+      <div class="num-val">0</div>
+      <div class="num-label">connexion requise à la captation</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ À PROPOS ══ -->
+<div class="wrap" id="about" style="padding-bottom:5rem;">
+  <div class="problem-band">
+    <div>
+      <div class="sec-tag" style="margin-bottom:1.25rem;">Pourquoi Sécurix existe</div>
+      <h2 style="font-size:1.8rem;">Redonner une base de confiance au réel numérique.</h2>
+      <p style="font-size:.95rem;color:var(--text-muted);line-height:1.8;margin-top:1rem;">Les deepfakes, les fake news et la fragilité du réel numérique rendent de plus en plus difficile de distinguer ce qui est authentique de ce qui est fabriqué. Sécurix a été conçu pour redonner une base de confiance solide à ceux qui ont besoin de documenter, préserver et défendre une réalité.</p>
+    </div>
+    <div class="divider-v"></div>
+    <div>
+      <div class="problem-label">La vision</div>
+      <div class="problem-text" style="font-weight:400;font-size:1rem;line-height:1.8;color:var(--text-muted);margin-top:.5rem;">
+        Un monde où chaque personne — journaliste, citoyen, professionnel — peut créer une preuve numérique fiable, vérifiable indépendamment, sans dépendre d'une autorité centrale.
+      </div>
+      <div style="margin-top:1.5rem;">
+        <a href="#" class="btn-outline">Nous contacter</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ CTA FINAL ══ -->
+<div class="cta-final">
+  <div class="sec-tag" style="display:inline-flex;margin-bottom:1.5rem;">Commencer maintenant</div>
+  <h2>Chaque preuve commence par une captation.</h2>
+  <p>Téléchargez Sécurix sur Google Play et commencez à constituer des preuves vidéo structurées, certifiées et vérifiables.</p>
+  <div class="hero-ctas">
+    <a href="https://play.google.com/store/apps/details?id=com.example.fideo" target="_blank" class="btn-primary">Télécharger sur Google Play</a>
+    <a href="/verify" class="btn-ghost">Vérifier une preuve</a>
+  </div>
+</div>
+</main>
+
+<!-- ════════════════════════════════════ FOOTER ══ -->
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#top" class="logo-wrap" style="text-decoration:none;">
+          <div class="logo-mark">
+            <svg viewBox="0 0 24 28" fill="none" style="width:22px;height:22px;">
+              <path d="M12 1L22 4.5V14.5C22 20 17 24.5 12 27C7 24.5 2 20 2 14.5V4.5L12 1Z" stroke="#D4AF37" stroke-width="1.5" fill="rgba(212,175,55,0.08)"/>
+              <path d="M8 14l3 3 5-5" stroke="#D4AF37" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div>
+            <div class="logo-name">SÉCURIX</div>
+            <div class="logo-sub">preuve vidéo certifiée</div>
+          </div>
+        </a>
+        <p>Structure probatoire mobile pour documenter, préserver et vérifier des preuves vidéo certifiées.</p>
+        <a href="https://play.google.com/store/apps/details?id=com.example.fideo" target="_blank" class="btn-play" style="width:fit-content;">
+          <svg style="width:22px;height:22px;" viewBox="0 0 24 24" fill="none">
+            <path d="M3 2L14.5 12L3 22V2Z" fill="#00D26A"/>
+            <path d="M14.5 12L18.2 8.4L21 10C22.2 10.7 22.2 13.3 21 14L18.2 15.6L14.5 12Z" fill="#FFD24A"/>
+            <path d="M3 2L11.4 10.4L14.5 12L18.2 8.4L3 2Z" fill="#4AA3FF"/>
+            <path d="M3 22L11.4 13.6L14.5 12L18.2 15.6L3 22Z" fill="#FF5252"/>
+          </svg>
+          <span style="font-size:.82rem;">Google Play</span>
+        </a>
+      </div>
+
+      <div class="footer-col">
+        <h4>Produit</h4>
+        <a href="#fonctionnement">Vue d'ensemble</a>
+        <a href="#pipeline">Pipeline probatoire</a>
+        <a href="#verification">Vérification</a>
+        <a href="#dossier">Dossier de preuve</a>
+        <a href="#offline">Hors ligne</a>
+      </div>
+
+      <div class="footer-col">
+        <h4>Cas d'usage</h4>
+        <a href="#usecases">Journalisme</a>
+        <a href="#usecases">Assurance</a>
+        <a href="#usecases">Sécurité</a>
+        <a href="#usecases">Chantier</a>
+        <a href="#usecases">Immobilier</a>
+        <a href="#usecases">Protection personnelle</a>
+      </div>
+
+      <div class="footer-col">
+        <h4>Ressources</h4>
+        <a href="#cadre-probatoire">Cadre probatoire</a>
+        <a href="#">Documentation</a>
+        <a href="#">FAQ</a>
+        <a href="#">Glossaire</a>
+        <a href="#">Politique de confidentialité</a>
+        <a href="#">Conditions d'utilisation</a>
+      </div>
+
+      <div class="footer-col">
+        <h4>Entreprise</h4>
+        <a href="#about">À propos</a>
+        <a href="#about">Vision</a>
+        <a href="#">Contact</a>
+        <a href="#">Demander une démo</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2026 Sécurix. Tous droits réservés.</p>
+      <div style="display:flex;gap:1.5rem;">
+        <a href="#">Confidentialité</a>
+        <a href="#">Conditions</a>
+        <a href="#">Contact</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
